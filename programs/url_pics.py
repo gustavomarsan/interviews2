@@ -38,19 +38,18 @@ def count_elapsed_time(f):
 def read_excel() -> list:
     global result, errors
     item_dict = {}
-    # directorio donde leera archivo xlsx partiendo de Catalogo 2025
-    dataframe = openpyxl.load_workbook("statics/files_to_read/ligas_foto.xlsx")
+    dataframe = openpyxl.load_workbook("programs/static/files_to_read/ligas_foto.xlsx")
 
     # Define variable to read sheet
     dataframe1 = dataframe.active
 
     # Iterate the loop to read the cell values
-    #result = []
     index = 0
     for row in range(1, dataframe1.max_row):
         record = [index]
         for col in dataframe1.iter_cols(1, dataframe1.max_column):
             record.append(col[row].value)
+        # check for duplicate items
         if record[5] in item_dict :
             errors.append("error en linea: " + str(record[2]) + ". Item: " + str(record[5]) + ".  Repetido de linea: " + str(item_dict[record[5]]))
             continue
@@ -62,12 +61,13 @@ def read_excel() -> list:
     
 @count_elapsed_time
 def import_picts() -> None :
-    cont = 0
     global result, errors
+    cont = 0
+
     for i in range(len(result)) :
-        
         remote_url = result[i][13]          # el 13 es la columna 12 desde 0 del archivo de excel (url)
-        local_file = "Imagenes/" + str(result[i][5]) + ".jpg"       # el 5 es la columna 4 desde 0 de excel (numero de parte)
+        print(remote_url)
+        local_file = "programs/static/url_images/" + str(result[i][5]) + ".jpg"       # el 5 es la columna 4 desde 0 de excel (numero de parte)
         try :
             request.urlretrieve(remote_url, local_file)
             print(result[i][2]+ 2, remote_url, local_file)  # el 0 es el numero de renglon (index)
@@ -84,7 +84,7 @@ def print_errors()-> None :
     global errors, init
     datos = pd.DataFrame(errors)
     # directorio para grabar archivo de erro.xlsx
-    excel_writer = pd.ExcelWriter("errores_excel/erores_"+init+".xlsx")
+    excel_writer = pd.ExcelWriter("programs/static/errores_excel/errores_"+init+".xlsx")
     datos.to_excel(excel_writer, sheet_name="Hoja 1")
     excel_writer._save()
     print("Reporte generado")

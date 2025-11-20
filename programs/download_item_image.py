@@ -12,6 +12,7 @@ from urllib import request
 from time import time
 from datetime import datetime
 import ssl
+import os
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
@@ -34,12 +35,12 @@ def count_elapsed_time(f):
         return ret
     return wrapper
 
-def descargar_primera_imagen(item, urls_search, errors, i):        # SerpApi
+def descargar_primera_imagen(item, urls_search, errors, i, api_key):        # SerpApi
     item_urls = [item]      # set all the urls of the search
     params = {
         "q": item,
-        "tbm": "isch",  # Modo imágenes
-        "api_key": "e32990863c05fbe2b864f68dd128d289fd5c278fda5e6a6155ee1dc3991685b0"   # key from SerpApi 
+        "tbm": "isch",      # Modo imágenes
+        "api_key": api_key   # key from SerpApi 
     }
     print(i, params)
 
@@ -85,8 +86,12 @@ def read_excel(result) -> None :
 
 @count_elapsed_time
 def descargar_imgenes_lista(result, errors, urls_search, init) -> None :
+    API_KEY = os.getenv("SERPAPI_API_KEY")
+    if not API_KEY:
+        raise RuntimeError("SERPAPI_API_KEY not set in environment")
+
     for i in range(len(result)) :
-        descargar_primera_imagen(result[i], urls_search, errors, i) 
+        descargar_primera_imagen(result[i], urls_search, errors, i, API_KEY) 
         #    errors.append(item)
 
 
@@ -116,6 +121,7 @@ errors = []
 urls_search = []
 read_excel(result)
 print(result)
+
 descargar_imgenes_lista(result, errors, urls_search, init)
 if len(errors) > 0 :
     print_errors(errors, init)
