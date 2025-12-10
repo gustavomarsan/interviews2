@@ -161,7 +161,7 @@ cython_debug/
 
 #exclude statics
 programs/static/busquedas_api/*.*
-programs/static/errores_excel/*.*
+programs/static/results_excel/*.*
 programs/static/photos_api/*.*
 programs/static/reports/*.*
 programs/static/url_images/*.*

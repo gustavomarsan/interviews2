@@ -4,15 +4,17 @@ descraga la primera imagen de internet y genera un archivo de excel con 100 liga
 
 """
 
-import requests
 from serpapi import GoogleSearch
 import openpyxl
 import pandas as pd
-from urllib import request
+from urllib import request, response
 from time import time
 from datetime import datetime
 import ssl
 import os
+import aiohttp
+import asyncio
+from pathlib import Path
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
@@ -35,7 +37,7 @@ def count_elapsed_time(f):
         return ret
     return wrapper
 
-def descargar_primera_imagen(item, urls_search, errors, i, api_key):        # SerpApi
+async def descargar_primera_imagen(item, urls_search, errors, i, api_key, session):        # SerpApi
     item_urls = [item]      # set all the urls of the search
     params = {
         "q": item,
@@ -44,63 +46,99 @@ def descargar_primera_imagen(item, urls_search, errors, i, api_key):        # Se
     }
     print(i, params)
 
-    search = GoogleSearch(params)
-    resultados = search.get_dict()
-    #print(len(resultados["images_results"]))
-    #print(type(resultados))
-    if "images_results" in resultados:
-        try :
-            url_imagen = resultados["images_results"][0]["original"]
-            img_data = requests.get(url_imagen).content
-       
-            with open("Documents/Cotizaciones 2025 Provicional/Catalogo 2025/imaganes_serpapi/" + item+".jpg", "wb") as handler:
-                handler.write(img_data)
-                
-       
-            # ser all the urls found in a excel list
-            for j in range(len(resultados["images_results"])) :
-                item_urls.append(resultados["images_results"][j]["original"])
-            urls_search.append(list(item_urls))
-        except :
-            errors.append(item)
-        return True
-    else:
+    resultados = GoogleSearch(params).get_dict()
+
+    if "images_results" not in resultados:
+        errors.append(item)
         return False
+    
+    try :
+        url_imagen = resultados["images_results"][0]["original"]
+        print(url_imagen)    
+        headers = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
+}
+        async with session.get(url_imagen, headers=headers, ssl=False) as response:
+            data = await response.read()
+            content_type = response.headers.get("Content-Type", "")
+            
+            # Debug logs
+            print("Status:", response.status)
+            print("Content-Type:", content_type)
+
+            is_jpeg = data[:3] == b'\xff\xd8\xff'
+            is_png  = data[:8] == b'\x89PNG\r\n\x1a\n'
+            is_gif  = data[:3] == b'GIF'            
+
+            # Validate the content before writing the file
+            is_image = ("image" in content_type or is_jpeg or is_png or is_gif)
+
+            if response.status == 200 and is_image:
+                image_path = Path("programs/static/photos_api") / f"{item}.jpg"
+                with open(image_path, "wb") as handler:
+                    handler.write(data)
+            else:
+                print(f"❌ {item}: URL is not an image or request failed.")
+                errors.append(item)
+                return False
+
+        # store all the urls found
+        for j in range(len(resultados["images_results"])) :
+            item_urls.append(resultados["images_results"][j]["original"])
+        
+        urls_search.append(list(item_urls))
+        return True
+        
+    except Exception as e:
+        print(f"❌ ERROR {item}: {e}")
+        errors.append(item)
+        return False
+        
 
 #@count_elapsed_time
 def read_excel(result) -> None :
     # Define variable to load the dataframe
-    dataframe = openpyxl.load_workbook("Documents/Cotizaciones 2025 Provicional/Catalogo 2025/Registros Ingram/item_sin_liga.xlsx")
+    excel_path = Path("programs/static/files_to_read/items.xlsx")
+    dataframe = openpyxl.load_workbook(excel_path)
 
     # Define variable to read sheet
     dataframe1 = dataframe.active
 
     # Iterate the loop to read the cell values
     index = 0
-    for row in range(1, dataframe1.max_row):
-        for col in dataframe1.iter_cols(1, dataframe1.max_column):
+    for row in range(0, dataframe1.max_row):
+        for col in dataframe1.iter_cols(0, dataframe1.max_column):
             result.append(str(col[row].value))
         index += 1
     print("Archivo Excel leido")
     return
 
 @count_elapsed_time
-def descargar_imgenes_lista(result, errors, urls_search, init) -> None :
+async def descargar_imgenes_lista(result, errors, urls_search, init) -> None :
     API_KEY = os.getenv("SERPAPI_API_KEY")
     if not API_KEY:
         raise RuntimeError("SERPAPI_API_KEY not set in environment")
 
-    for i in range(len(result)) :
-        descargar_primera_imagen(result[i], urls_search, errors, i, API_KEY) 
-        #    errors.append(item)
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for i in range(len(result)):
+            item = result[i]
+            tasks.append(descargar_primera_imagen(item, urls_search, errors, i, API_KEY, session))
+
+        await asyncio.gather(*tasks)
 
 
-
-
-    print("Imagenes descargadas")
+    print((len(result)-len(errors)),"Imagenes descargadas")
     print(len(errors), "items no encontrados")
+    
+    # Save all the urls found to an excel file
+    results_path = Path("programs/static/results_excel/")
     datos = pd.DataFrame(urls_search)
-    excel_writer = pd.ExcelWriter("Documents/Cotizaciones 2025 Provicional/Catalogo 2025/api_urls_excel/"+init+".xlsx")
+    excel_writer = pd.ExcelWriter(results_path / (init + ".xlsx"))
     datos.to_excel(excel_writer, sheet_name=init)
     excel_writer._save()
 
@@ -108,20 +146,25 @@ def descargar_imgenes_lista(result, errors, urls_search, init) -> None :
 @count_elapsed_time
 def print_errors(errors, init)-> None :
     datos = pd.DataFrame(errors)
-    excel_writer = pd.ExcelWriter("errores_excel/errores_api_"+init+".xlsx")
+    results_path = Path("programs/static/results_excel/")
+    excel_writer = pd.ExcelWriter(results_path / ("errores_api_"+init+".xlsx"))
     datos.to_excel(excel_writer, sheet_name=init)
     excel_writer._save()
     print("Reporte de errores generado")
+
+
 
 now = datetime.now()
 print("prueba", now)
 init = str(now.strftime('day_%d_%m_%Y_time_%H_%M'))
 result = []
 errors = []
-urls_search = []
+urls_search = []        #set a list of urls found for each item for future use
 read_excel(result)
 print(result)
 
-descargar_imgenes_lista(result, errors, urls_search, init)
+if len(result) > 0 :
+    asyncio.run(descargar_imgenes_lista(result, errors, urls_search, init))
+
 if len(errors) > 0 :
     print_errors(errors, init)
