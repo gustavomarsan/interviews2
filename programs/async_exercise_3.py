@@ -71,7 +71,7 @@ async def main():
     asyncio.create_task(drinking_lemonade()),
     asyncio.create_task(eating())
 ]
-    done, pending = await asyncio.wait(tasks)
+    await asyncio.wait(tasks)
 
     end = time.time()
     print(f"All tasks completed in {end - init} seconds")
