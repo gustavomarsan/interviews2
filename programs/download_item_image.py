@@ -33,7 +33,7 @@ def count_elapsed_time(f):
         ret = f(*args, **kwargs)
         # Calculate the elapsed time.
         elapsed_time = time() - start_time
-        print("Elapsed time: %0.10f seconds." % elapsed_time)
+        print("Elapsed time: %0.4f seconds." % elapsed_time)
         return ret
     return wrapper
 
@@ -147,9 +147,13 @@ async def descargar_imgenes_lista(result, errors, urls_search, init) -> None :
 def print_errors(errors, init)-> None :
     datos = pd.DataFrame(errors)
     results_path = Path("programs/static/results_excel/")
-    excel_writer = pd.ExcelWriter(results_path / ("errores_api_"+init+".xlsx"))
-    datos.to_excel(excel_writer, sheet_name=init)
-    excel_writer._save()
+    results_path.mkdir(parents=True, exist_ok=True)
+    
+    file_path = results_path / f"errores_api_{init}.xlsx"
+
+    with pd.ExcelWriter(file_path) as writer:
+        datos.to_excel(writer, sheet_name=init)
+
     print("Reporte de errores generado")
 
 

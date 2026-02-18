@@ -3,10 +3,13 @@ import time
 from datetime import datetime
 
 async def task_example(name):
-    print(f"Task {name}: Starting")
+    init= datetime.now()
+    print(f"Task {name}: Starting", init)
     await asyncio.sleep(5)  # simulate 5 seconds delay
-    print(f"Task {name}: Completed after {2} seconds")
-    return "Finish time " + datetime.now().strftime("%H:%M:%S")+ f".{datetime.now().microsecond:06d}"
+    end= datetime.now()
+    elapsed = end - init
+    print(f"Task {name}: Completed after {elapsed.total_seconds():.6f} seconds")
+    return  "Finish time " + datetime.now().strftime("%H:%M:%S")+ f".{datetime.now().microsecond:06d}"
 
 
 async def main():
