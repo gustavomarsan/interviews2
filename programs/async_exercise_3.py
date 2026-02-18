@@ -27,42 +27,47 @@ async def drinking_coffee():
 
 async def main():
     init = time.time()
+    
     # method 1: using asyncio.create_task for each task
-    #tasks = [
-    #    asyncio.create_task(washing_clothes()),
-    #    asyncio.create_task(drinking_lemonade()),
-    #    asyncio.create_task(eating())
-    #]
+    """
+    tasks = [
+        asyncio.create_task(washing_clothes()),
+        asyncio.create_task(drinking_lemonade()),
+        asyncio.create_task(eating())
+    ]
 
-    #await asyncio.gather(*tasks)
-
+    await asyncio.gather(*tasks)
+    """
 
 
     # method 2: using asyncio.gather directly
-    #await asyncio.gather(
-    #washing_clothes(),
-    #drinking_lemonade(),
-    #eating()
-    #)
-
+    """
+    await asyncio.gather(
+    washing_clothes(),
+    drinking_lemonade(),
+    eating()
+    )
+    """
     
 
     #method 3: Run tasks one-by-one but NOT waiting for them (fire & forget)
-    #asyncio.create_task(washing_clothes())
-    #asyncio.create_task(drinking_lemonade())
-    #asyncio.create_task(eating())
+    """
+    asyncio.create_task(washing_clothes())
+    asyncio.create_task(drinking_lemonade())
+    asyncio.create_task(eating())
 
     #Let the main keep working…
-    #await asyncio.sleep(25)  # just keep program alive
-
+    await asyncio.sleep(25)  # just keep program alive
+    """
 
 
     #method 4: Use TaskGroup (Python 3.11+)
-    #async with asyncio.TaskGroup() as tg:
-    #    tg.create_task(washing_clothes())
-    #    tg.create_task(drinking_lemonade())
-    #    tg.create_task(eating())
-
+    """
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(washing_clothes())
+        tg.create_task(drinking_lemonade())
+        tg.create_task(eating())
+    """
 
 
     #method 5: Use asyncio.wait()

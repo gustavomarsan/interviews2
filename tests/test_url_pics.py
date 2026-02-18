@@ -1,18 +1,9 @@
-import sys
-import importlib.util
 from pathlib import Path
 import openpyxl
 import pandas as pd
 from urllib import error
+from programs import url_pics
 
-def load_module():
-    repo_root = Path(__file__).resolve().parents[1]
-    module_path = repo_root / "programs" / "url_pics.py"
-    spec = importlib.util.spec_from_file_location("url_pics", str(module_path))
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["url_pics"] = module
-    spec.loader.exec_module(module)
-    return module
 
 def make_workbook(path, rows):
     wb = openpyxl.Workbook()
@@ -30,7 +21,6 @@ def test_read_excel_success(tmp_path):
     ]
     make_workbook(excel_path, rows)
 
-    url_pics = load_module()
     result = []
     errors = []
     
@@ -52,7 +42,6 @@ def test_read_excel_missing_file(tmp_path):
     if excel_path.exists():
         excel_path.unlink()
 
-    url_pics = load_module()
     result = []
     errors = []
     url_pics.read_excel(result, errors)
@@ -62,7 +51,6 @@ def test_read_excel_missing_file(tmp_path):
     assert "not found" in (errors[0][3].lower() or "")
 
 def test_import_picts_success(monkeypatch):
-    url_pics = load_module()
     item = "ITEMX"
     url = "http://example/test.jpg"
     rec = [0, None, "refX", None, None, item] + [None] * 7 + [url]
@@ -88,7 +76,6 @@ def test_import_picts_success(monkeypatch):
     assert errors == []
 
 def test_import_picts_http_error(monkeypatch):
-    url_pics = load_module()
     item = "ITEM_ERR"
     url = "http://bad/url.jpg"
     rec = [0, None, "refErr", None, None, item] + [None] * 7 + [url]
@@ -106,7 +93,6 @@ def test_import_picts_http_error(monkeypatch):
     assert "download failed" in errors[0][3].lower()
 
 def test_print_errors_creates_excel():
-    url_pics = load_module()
     init = "testinit"
     errors = [
         [1, "ITEM1", "http://x", "download failed"],
