@@ -3,13 +3,13 @@ This script reads an Excel file containing a list dicts, gettting the 'VendorPar
 searches for the first image of each item using the SerpApi, and downloads it to a specified directory.
 Also generates a excel file with all the urls found for each item, and a separate excel file with 
 the items that had errors during the process.
-"""
+https://serpapi.com/    to put in "api_key"  = 
 
+"""
 from functools import wraps
 from serpapi import GoogleSearch
 import openpyxl
 import pandas as pd
-from urllib import request, response
 from time import time
 from datetime import datetime
 import json
@@ -20,8 +20,6 @@ import asyncio
 from pathlib import Path
 ssl._create_default_https_context = ssl._create_unverified_context
 
-
-# https://serpapi.com/    to put in "api_key"  = 
 
 def count_elapsed_time(f):
     @wraps(f)
@@ -42,12 +40,12 @@ def count_elapsed_time(f):
     return async_wrapper if asyncio.iscoroutinefunction(f) else sync_wrapper
 
 @count_elapsed_time
-async def download_first_image(item, urls_search, errors, i, api_key, session, semaphore: asyncio.Semaphore):        # SerpApi
+async def download_first_image(item, urls_search, errors, i, api_key, session, semaphore: asyncio.Semaphore):
     item_urls = [item]      # set all the urls of the search
     params = {
         "q": item,
         "tbm": "isch",      # Modo imágenes
-        "api_key": api_key   # key from SerpApi 
+        "api_key": api_key  # key from SerpApi account
     }
 
     print(i, params)
@@ -55,12 +53,7 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
     try:
         async with semaphore:
             
-            # ---- Blocking SerpAPI wrapped ----
-            loop = asyncio.get_running_loop()
-            resultados = await loop.run_in_executor(
-                None,
-                lambda: GoogleSearch(params).get_dict()
-            )
+            resultados = await asyncio.to_thread(GoogleSearch(params).get_dict)
 
             if "images_results" not in resultados:
                 errors.append(item)
@@ -83,7 +76,6 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
                 "Chrome/120.0.0.0 Safari/537.36"
                 )
             }
-
 
             async with session.get(url_imagen, headers=headers, ssl=False) as response:
                 data = await response.read()
@@ -110,7 +102,7 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
                 errors.append(item)
                 return False
 
-        # store all the urls found
+        # store all the urls found for future use
         for j in range(len(resultados["images_results"])) :
             item_urls.append(resultados["images_results"][j]["original"])
         
