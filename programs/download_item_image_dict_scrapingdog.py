@@ -180,19 +180,20 @@ async def dowmnload_images_list(result, errors, urls_search, init) -> None :
     print(len(errors), "items no encontrados")
     
     # Save all the urls found to an excel file
-    results_path = Path("programs/static/results_excel/")
     datos = pd.DataFrame(urls_search)
+    results_path = Path("programs/static/results_excel/")
+    results_path.mkdir(parents=True, exist_ok=True)
+    file_path = results_path / f"urls_sdog_{init}.xlsx"
 
-    with pd.ExcelWriter(results_path / f"urls_sdog_{init}.xlsx") as writer:
-        datos.to_excel(writer, sheet_name=init)
-
+    with FileManager(file_path, "wb") as file:
+        with pd.ExcelWriter(file, engine='openpyxl') as writer:
+            datos.to_excel(writer, sheet_name=init)
 
 @count_elapsed_time
 def print_errors(errors, init)-> None :
     datos = pd.DataFrame(errors)
     results_path = Path("programs/static/errores_excel/")
     results_path.mkdir(parents=True, exist_ok=True)
-    
     file_path = results_path / f"errores_api_sdog_{init}.xlsx"
 
     with FileManager(file_path, "wb") as file:
