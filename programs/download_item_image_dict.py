@@ -18,6 +18,7 @@ import os
 import aiohttp
 import asyncio
 from pathlib import Path
+from file_manager import FileManager
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
@@ -117,18 +118,17 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
 
 @count_elapsed_time
 def read_excel(result) -> None :
-    # Define variable to load the dataframe
     excel_path = Path("programs/static/files_to_read/lista_dicts.xlsx")
-    dataframe = openpyxl.load_workbook(excel_path)
-    sheet = dataframe.active
+    with FileManager(excel_path, "rb") as file:
+        workbook = openpyxl.load_workbook(file)
+        sheet = workbook.active
 
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        item = row[9]   # VendorPartNumber
-        if isinstance(item, str) and item.strip().startswith("{"):
-            parsed = json.loads(item.strip())
-            result.append(parsed["vendorPartNumber"])
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            item = row[9]   # VendorPartNumber
+            if isinstance(item, str) and item.strip().startswith("{"):
+                parsed = json.loads(item.strip())
+                result.append(parsed["vendorPartNumber"])
 
-    print("Archivo Excel leido")
     return
 
 @count_elapsed_time
@@ -167,10 +167,9 @@ def print_errors(errors, init)-> None :
     
     file_path = results_path / f"errores_api_{init}.xlsx"
 
-    with pd.ExcelWriter(file_path) as writer:
-        datos.to_excel(writer, sheet_name=init)
-
-    print("Reporte de errores generado")
+    with FileManager(file_path, "wb") as file:
+        with pd.ExcelWriter(file, engine='openpyxl') as writer:
+            datos.to_excel(writer, sheet_name=init)
 
 
 
