@@ -106,6 +106,7 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
                 print("Status:", img_response.status)
                 print("Content-Type:", content_type)
 
+            # validate content type and magic numbers for common image formats
             is_jpeg = data[:3] == b'\xff\xd8\xff'
             is_png  = data[:8] == b'\x89PNG\r\n\x1a\n'
             is_gif  = data[:3] == b'GIF'
