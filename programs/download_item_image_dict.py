@@ -20,6 +20,8 @@ import asyncio
 from pathlib import Path
 from file_manager import FileManager
 ssl._create_default_https_context = ssl._create_unverified_context
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 
 def count_elapsed_time(f):
@@ -94,8 +96,9 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
             is_image = ("image" in content_type or is_jpeg or is_png or is_gif)
 
             if response.status == 200 and is_image:
-                image_path = Path("programs/static/photos_api") / f"{item}.jpg"
+                image_path = BASE_DIR / "programs/static/photos_api" / f"{item}.jpg"
                 image_path.parent.mkdir(parents=True, exist_ok=True)
+
                 with open(image_path, "wb") as handler:
                     handler.write(data)
             else:
@@ -118,7 +121,8 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
 
 @count_elapsed_time
 def read_excel(result) -> None :
-    excel_path = Path("programs/static/files_to_read/lista_dicts.xlsx")
+    excel_path = BASE_DIR / "programs/static/files_to_read/lista_dicts.xlsx"
+
     with FileManager(excel_path, "rb") as file:
         workbook = openpyxl.load_workbook(file)
         sheet = workbook.active
@@ -153,7 +157,7 @@ async def dowmnload_images_list(result, errors, urls_search, init) -> None :
     
     # Save all the urls found to an excel file
     datos = pd.DataFrame(urls_search)
-    results_path = Path("programs/static/results_excel/")
+    results_path = BASE_DIR / "programs/static/results_excel/"
     results_path.mkdir(parents=True, exist_ok=True)
     file_path = results_path / f"urls_{init}.xlsx"
 
@@ -194,4 +198,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    print("basedir", BASE_DIR)
     asyncio.run(main())
