@@ -25,8 +25,8 @@ from file_manager import FileManager
 
 
 load_dotenv()
-
 ssl._create_default_https_context = ssl._create_unverified_context
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def count_elapsed_time(f):
@@ -114,7 +114,7 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
             is_image = ("image" in content_type or is_jpeg or is_png or is_gif)
 
             if img_response.status == 200 and is_image:
-                image_path = Path("programs/static/photos_api") / f"{item}.jpg"
+                image_path = BASE_DIR / "programs/static/photos_api" / f"{item}.jpg"
                 image_path.parent.mkdir(parents=True, exist_ok=True)
 
                 with open(image_path, "wb") as handler:
@@ -142,7 +142,7 @@ async def download_first_image(item, urls_search, errors, i, api_key, session, s
 
 @count_elapsed_time
 def read_excel(result) -> None :
-    excel_path = Path("programs/static/files_to_read/lista_dicts.xlsx")
+    excel_path = BASE_DIR / "programs/static/files_to_read/lista_dicts.xlsx"
     with FileManager(excel_path, "rb") as file:
         workbook = openpyxl.load_workbook(file)
         sheet = workbook.active
@@ -181,7 +181,7 @@ async def dowmnload_images_list(result, errors, urls_search, init) -> None :
     
     # Save all the urls found to an excel file
     datos = pd.DataFrame(urls_search)
-    results_path = Path("programs/static/results_excel/")
+    results_path = BASE_DIR / "programs/static/results_excel/"
     results_path.mkdir(parents=True, exist_ok=True)
     file_path = results_path / f"urls_sdog_{init}.xlsx"
 
@@ -192,15 +192,13 @@ async def dowmnload_images_list(result, errors, urls_search, init) -> None :
 @count_elapsed_time
 def print_errors(errors, init)-> None :
     datos = pd.DataFrame(errors)
-    results_path = Path("programs/static/errores_excel/")
+    results_path = BASE_DIR / "programs/static/errores_excel/"
     results_path.mkdir(parents=True, exist_ok=True)
     file_path = results_path / f"errores_api_sdog_{init}.xlsx"
 
     with FileManager(file_path, "wb") as file:
         with pd.ExcelWriter(file, engine='openpyxl') as writer:
             datos.to_excel(writer, sheet_name=init)
-
-
 
 
 @count_elapsed_time
@@ -222,4 +220,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    print("basedir", BASE_DIR)
     asyncio.run(main())
