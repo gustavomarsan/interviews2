@@ -19,9 +19,9 @@ import aiohttp
 import asyncio
 from pathlib import Path
 from file_manager import FileManager
+
 ssl._create_default_https_context = ssl._create_unverified_context
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 
 def count_elapsed_time(f):
